@@ -15,20 +15,19 @@ return new class extends Migration
             $table->bigIncrements('dtl_dlv_id');
 
             $table->unsignedBigInteger('dlv_id');
-            $table->unsignedBigInteger('dtl_mr_id');  
             $table->unsignedBigInteger('part_id');
 
             $table->string('dtl_dlv_part_number');
             $table->string('dtl_dlv_part_name');
             $table->string('dtl_dlv_satuan');
 
-            $table->integer('dtl_dlv_qty_request');    
-            $table->integer('dtl_dlv_qty_send');      
+            $table->integer('qty_on_delivery');    
+            $table->integer('qty_delivered');   
+            $table->integer('qty_pending');   
 
             $table->timestamps();
 
             $table->foreign('dlv_id')->references('dlv_id')->on('tb_delivery')->onDelete('cascade');
-            $table->foreign('dtl_mr_id')->references('dtl_mr_id')->on('dtl_material_request');
             $table->foreign('part_id')->references('part_id')->on('tb_barang');
         });
 

@@ -11,9 +11,15 @@ class StockModel extends Model
 
     protected $fillable = [
         'part_id',
-        'stk_lokasi',
+        'stk_location',
         'stk_qty',
         'stk_min',
         'stk_max',
     ];
+
+    //FK
+    public function barang()
+    {
+        return $this->belongsTo(BarangModel::class, 'part_id', 'part_id');
+    }
 }

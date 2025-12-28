@@ -20,8 +20,10 @@ return new class extends Migration
             $table->string('dlv_dari_gudang');
             $table->string('dlv_ke_gudang');
             $table->string('dlv_ekspedisi');
+            $table->integer('dlv_jumlah_koli')->default(0);
+            $table->string('dlv_pic');
             $table->string('dlv_no_resi')->nullable();
-            $table->string('dlv_status')->default('delivered');
+            $table->string('dlv_status');
 
             $table->timestamps();
 

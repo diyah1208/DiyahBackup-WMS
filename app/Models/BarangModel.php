@@ -14,4 +14,10 @@ class BarangModel extends Model
         'part_name',
         'part_satuan',
     ];
+
+
+     public function barang()
+    {
+        return $this->belongsTo(BarangModel::class, 'part_id', 'part_id');
+    }
 }

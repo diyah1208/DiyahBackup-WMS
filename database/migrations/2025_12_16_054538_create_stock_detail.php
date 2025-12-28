@@ -12,20 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tb_stock', function (Blueprint $table) {
-            $table->bigIncrements('stk_id');
-
-            $table->unsignedBigInteger('part_id');
-            $table->string('stk_lokasi');          
-
+            $table->bigIncrements('stk_id');      
             $table->integer('stk_qty')->default(0);
             $table->integer('stk_min')->default(0);
             $table->integer('stk_max')->default(0);
+            $table->string('stk_location');  
 
             $table->timestamps();
 
-            $table->foreign('part_id')->references('part_id')->on('tb_barang');
-
-            $table->unique(['part_id', 'stk_lokasi']);  
         });
 
     }

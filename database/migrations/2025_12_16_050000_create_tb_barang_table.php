@@ -16,7 +16,7 @@ return new class extends Migration
 
             $table->string('part_number')->unique();    
             $table->string('part_name');                 
-            $table->string('part_satuan');              
+            $table->string('part_satuan');             
 
             $table->timestamps();
         });

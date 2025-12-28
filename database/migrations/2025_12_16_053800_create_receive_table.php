@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('ri_kode')->unique();         
             $table->unsignedBigInteger('po_id');          
             $table->string('ri_lokasi'); 
+            $table->string('ri_pic'); 
             $table->date('ri_tanggal');
             $table->text('ri_keterangan')->nullable();
 

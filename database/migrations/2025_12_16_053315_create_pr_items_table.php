@@ -16,6 +16,7 @@ return new class extends Migration
 
             $table->unsignedBigInteger('pr_id');
             $table->unsignedBigInteger('mr_id');
+            $table->unsignedBigInteger('part_id');
 
             $table->string('dtl_pr_part_number');
             $table->string('dtl_pr_part_name');
@@ -26,6 +27,7 @@ return new class extends Migration
 
             $table->foreign('pr_id')->references('pr_id')->on('tb_purchase_request')->onDelete('cascade');
             $table->foreign('mr_id')->references('mr_id')->on('tb_material_request');
+            $table->foreign('part_id')->references('part_id')->on('tb_barang');
         });
 
     }

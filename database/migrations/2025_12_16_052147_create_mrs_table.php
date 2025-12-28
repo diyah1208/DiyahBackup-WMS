@@ -15,7 +15,8 @@ return new class extends Migration
             $table->bigIncrements('mr_id');
 
             $table->string('mr_kode')->unique();          
-            $table->string('mr_lokasi');                  
+            $table->string('mr_lokasi');  
+            $table->string('mr_pic');                
             $table->unsignedBigInteger('mr_pic_id');      
             $table->date('mr_tanggal')->nullable();
             $table->date('mr_due_date')->nullable();
