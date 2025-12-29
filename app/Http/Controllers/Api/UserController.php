@@ -38,7 +38,7 @@ class UserController extends Controller
             'password' => Hash::make($data['password']),
             'role'     => $data['role'],
             'lokasi'   => $data['lokasi'] ?? null,
-            'status'   => 'active', 
+            'status'   => 'active', // default active
         ]);
 
         return response()->json([

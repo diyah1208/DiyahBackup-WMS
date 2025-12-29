@@ -60,7 +60,7 @@ class AuthController extends Controller
             'lokasi'   => null,
         ]);
 
-        //$user->sendEmailVerificationNotification();
+        $user->sendEmailVerificationNotification();
 
         return response()->json([
             'message' => 'Pendaftaran berhasil. Silakan cek email untuk verifikasi.'
