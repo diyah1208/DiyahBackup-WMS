@@ -110,10 +110,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('pr')->group(function () {
         Route::get('/', [PurchaseRequestController::class, 'index']);
         Route::post('/', [PurchaseRequestController::class, 'store']);
+        Route::get('/kode/{kode}', [PurchaseRequestController::class, 'showKode']);
         Route::get('/{id}', [PurchaseRequestController::class, 'show']);
         Route::put('/{id}', [PurchaseRequestController::class, 'update']);
         Route::delete('/{id}', [PurchaseRequestController::class, 'destroy']);
         Route::get('/pr/{kode}', [PurchaseRequestController::class, 'show']);
+        
     });
 
     // ===== PURCHASE ORDER (PO) =====

@@ -13,7 +13,7 @@ class PurchaseRequestItemModel extends Model
     protected $fillable = [
         'pr_id',
         'mr_id',
-        'dtl_pr_kode_mr',
+        'part_id',
         'dtl_pr_part_number',
         'dtl_pr_part_name',
         'dtl_pr_satuan',

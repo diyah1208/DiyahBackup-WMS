@@ -1,134 +1,85 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PurchaseRequestModel;
 use App\Models\BarangModel;
+use App\Models\PurchaseRequestItemModel;
+
 
 class PurchaseRequestController extends Controller
 {
-    // ===================== GET / LIST =====================
-    public function index(Request $request)
+    public function index()
     {
-        $query = PurchaseRequestModel::with('pic','details');
-        return response()->json($query->get(), 200);
+        $data = PurchaseRequestModel::with([
+            'details',
+            'details.mr', 
+        ])
+            ->orderBy('pr_status', 'desc')
+            ->orderBy('pr_kode', 'desc')
+            ->get();
+
+        return response()->json($data);
     }
 
-    // ===================== POST / CREATE =====================
-// Tambahkan di store()
-public function store(Request $request)
-{
-    $data = $request->validate([
-        'pr_kode'    => 'required|string|unique:tb_purchase_request,pr_kode',
-        'pr_lokasi'  => 'required|string',
-        'pr_pic_id'  => 'required|exists:users,id',
-        'pr_tanggal' => 'required|date',
-        'pr_status'  => 'nullable|string|in:open,approved,closed',
-        'order_item' => 'required|array',
-        'order_item.*.part_id' => 'required|integer',
-        'order_item.*.qty' => 'required|integer|min:1',
-        'order_item.*.mr_id' => 'required|integer',
-        'order_item.*.kode_mr' => 'required|string',
-    ]);
+    public function showKode($kode)
+    {
+        $pr = PurchaseRequestModel::with([
+            'details',
+            'details.mr',
+        ])
+        ->where('pr_kode', $kode)
+        ->firstOrFail();
 
-    $pr = PurchaseRequestModel::create($data);
-
-    // Simpan PR Items
-    foreach ($data['order_item'] as $item) {
-        $pr->details()->create([
-            'part_id' => $item['part_id'],
-            'qty'     => $item['qty'],
-            'mr_id'   => $item['mr_id'],
-            'kode_mr' => $item['kode_mr'],
-        ]);
+        return response()->json($pr);
     }
 
-    return response()->json([
-        'status'  => true,
-        'message' => 'Purchase Request berhasil ditambahkan',
-        'data'    => $pr->load('details')
-    ], 201);
-}
-public function details()
-{
-    return $this->hasMany(PRItemModel::class, 'pr_id', 'pr_id');
-}
 
-    // ===================== PUT / UPDATE =====================
-    public function update(Request $request, $id)
+    public function show($id)
     {
-        $pr = PurchaseRequestModel::find($id);
+        $pr = PurchaseRequestModel::with([
+            'details',
+        ])->findOrFail($id);
 
-        if (!$pr) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Purchase Request tidak ditemukan'
-            ], 404);
-        }
+        return response()->json($pr);
+    }
 
-        $data = $request->validate([
-            'pr_kode'    => 'sometimes|required|string|unique:tb_purchase_request,pr_kode,' . $id . ',pr_id',
-            'pr_lokasi'  => 'sometimes|required|string',
-            'pr_pic_id'  => 'sometimes|required|exists:users,id',
-            'pr_tanggal' => 'sometimes|required|date',
-            'pr_status'  => 'nullable|string|in:open,approved,closed',
+     public function store(Request $request)
+    {
+        $request->validate([
+            'pr_kode'        => 'required|unique:tb_purchase_request,pr_kode',
+            'pr_lokasi'      => 'required',
+            'pr_tanggal'     => 'required',
+            'pr_pic'         => 'required',
+            'details'        => 'required|array',
         ]);
 
-        $pr->update($data);
+        DB::transaction(function () use ($request) {
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Purchase Request berhasil diperbarui',
-            'data'    => $pr
-        ], 200);
+            $delivery = PurchaseRequestModel::create([
+                'pr_kode'     => $request->pr_kode,
+                'pr_lokasi'   => $request->pr_lokasi,
+                'pr_tanggal'  => $request->pr_tanggal,
+                'pr_status'   => 'open',
+                'pr_pic'      => $request->pr_pic,
+            ]);
+
+            foreach ($request->details as $item) {
+                PurchaseRequestItemModel::create([
+                    'pr_id'                 => $delivery->pr_id,
+                    'mr_id'                 => $item['mr_id'],
+                    'part_id'               => $item['part_id'],
+                    'dtl_pr_part_number'    => $item['dtl_pr_part_number'],
+                    'dtl_pr_part_name'      => $item['dtl_pr_part_name'],
+                    'dtl_pr_satuan'         => $item['dtl_pr_satuan'],
+                    'dtl_pr_qty'            => 0,
+                ]);
+            }
+        });
+
+        return response()->json(['message' => 'Purchase Request created']);
     }
-
-    // ===================== DELETE =====================
-    public function destroy($id)
-    {
-        $pr = PurchaseRequestModel::find($id);
-
-        if (!$pr) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Purchase Request tidak ditemukan'
-            ], 404);
-        }
-
-        $pr->delete();
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Purchase Request berhasil dihapus'
-        ], 200);
-    }
-
-    // ===================== GET DETAIL BY ID =====================
-public function show($kode)
-    {
-        // Cari PR berdasarkan kode
-        $pr = PurchaseRequestModel::with(['pic', 'details'])->where('pr_kode', $kode)->first();
-
-        if (!$pr) {
-            return response()->json([
-                'success' => false,
-                'message' => "Purchase Request dengan kode {$kode} tidak ditemukan."
-            ], 404);
-        }
-
-        // Pastikan details selalu array
-        $prData = $pr->toArray();
-        if (!isset($prData['details'])) {
-            $prData['details'] = [];
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $prData
-        ]);
-    }
-
-
 }
