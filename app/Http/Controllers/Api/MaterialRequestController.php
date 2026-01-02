@@ -123,7 +123,7 @@ class MaterialRequestController extends Controller
             ->firstOrFail();
 
         return response()->json($mr);
-    }
+    }   
 
     public function generateKode(Request $request)
     {

@@ -17,16 +17,13 @@ class PurchaseRequestController extends Controller
         $data = PurchaseRequestModel::with([
             'details',
             'details.mr', 
-        ])
-            ->orderBy('pr_status', 'desc')
-            ->orderBy('pr_kode', 'desc')
-            ->get();
-
-        return response()->json($data);
+        ]); 
+        return response()->json($data->get());
     }
 
     public function showKode($kode)
     {
+        $kode = urldecode($kode);
         $pr = PurchaseRequestModel::with([
             'details',
             'details.mr',
