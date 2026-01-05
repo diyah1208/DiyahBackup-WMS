@@ -18,8 +18,8 @@ class ReceiveController extends Controller
     public function getPoPurchased(Request $request)
     {
         $data = PurchaseOrderModel::with([
-                'details',          // detail PO
-                'purchaseRequest'   // kalau relasi ada
+                'details',          
+                'purchaseRequest.details.mr'  
             ])
             ->where('po_status', 'purchased')
             ->orderBy('created_at', 'desc')
@@ -46,7 +46,7 @@ class ReceiveController extends Controller
     {
         $receive = ReceiveModel::with([
             'purchaseOrder',
-            'details'
+            'details',
         ])
         ->where('ri_kode', $kode)
         ->firstOrFail();
@@ -90,7 +90,6 @@ class ReceiveController extends Controller
                 // INSERT DETAIL RECEIVE
                 ReceiveDetailModel::create([
                     "ri_id"  => $receive->ri_id,
-                    "po_id"  => $request->po_id,
                     "mr_id"  => $item["mr_id"],
                     "part_id"=> $item["part_id"],
 

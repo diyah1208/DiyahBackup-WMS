@@ -16,6 +16,7 @@ class PurchaseOrderModel extends Model
         'po_estimasi',
         'po_keterangan',
         'po_status',
+        'po_pic',
     ];
 
     //FK

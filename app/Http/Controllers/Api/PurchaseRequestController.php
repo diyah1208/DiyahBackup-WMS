@@ -39,18 +39,20 @@ class PurchaseRequestController extends Controller
     {
         $pr = PurchaseRequestModel::with([
             'details',
+            'details.mr',
         ])->findOrFail($id);
 
         return response()->json($pr);
     }
 
-     public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'pr_kode'        => 'required|unique:tb_purchase_request,pr_kode',
             'pr_lokasi'      => 'required',
             'pr_tanggal'     => 'required',
             'pr_pic'         => 'required',
+            'details.*.dtl_pr_qty' => 'required|numeric|min:1',
             'details'        => 'required|array',
         ]);
 
@@ -72,7 +74,7 @@ class PurchaseRequestController extends Controller
                     'dtl_pr_part_number'    => $item['dtl_pr_part_number'],
                     'dtl_pr_part_name'      => $item['dtl_pr_part_name'],
                     'dtl_pr_satuan'         => $item['dtl_pr_satuan'],
-                    'dtl_pr_qty'            => 0,
+                    'dtl_pr_qty'            => $item['dtl_pr_qty'] ?? 0,
                 ]);
             }
         });

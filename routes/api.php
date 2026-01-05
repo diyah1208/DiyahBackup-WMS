@@ -122,6 +122,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('po')->group(function () {
         Route::get('/', [PurchaseOrderController::class, 'index']);
         Route::post('/', [PurchaseOrderController::class, 'store']);
+        Route::get('/kode/{kode}', [PurchaseOrderController::class, 'showKode'])->where('kode', '.*');
         Route::get('/{id}', [PurchaseOrderController::class, 'show']);
         Route::put('/{id}', [PurchaseOrderController::class, 'update']);
         Route::delete('/{id}', [PurchaseOrderController::class, 'destroy']);

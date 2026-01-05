@@ -11,12 +11,12 @@ class PurchaseOrderDetailModel extends Model
 
     protected $fillable = [
         'po_id',
-        'mr_id',
         'part_id',
         'dtl_po_part_number',
         'dtl_po_part_name',
         'dtl_po_satuan',
         'dtl_po_qty',
+        'dtl_qty_received',
     ];
 
     public function purchaseOrder()
@@ -25,15 +25,6 @@ class PurchaseOrderDetailModel extends Model
             PurchaseOrderModel::class,
             'po_id',
             'po_id'
-        );
-    }
-
-    public function materialRequest()
-    {
-        return $this->belongsTo(
-            MaterialRequestModel::class,
-            'mr_id',
-            'mr_id'
         );
     }
 

@@ -3,73 +3,127 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\PurchaseOrderModel;
-use App\Models\PurchaseRequestModel;
 use App\Models\PurchaseOrderDetailModel;
+use App\Models\PurchaseRequestModel;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderController extends Controller
 {
-    // Menampilkan list PO dengan filter/search
-    public function index(Request $request)
+    public function index()
     {
-        $query = PurchaseOrderModel::with('purchaseRequest.pic'); // relasi ke PR -> PIC
+        $pos = PurchaseOrderModel::with('purchaseRequest')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        return response()->json($query->get());
+        return response()->json(
+            $pos->map(fn ($po) => [
+                'id' => $po->po_id,
+                'kode' => $po->po_kode,
+                'kode_pr' => $po->purchaseRequest->pr_kode ?? null,
+                'tanggal' => $po->po_tanggal,
+                'tanggal_estimasi' => $po->po_estimasi,
+                'status' => strtolower($po->po_status),
+                'pic' => $po->po_pic,
+                'keterangan' => $po->po_keterangan,
+                'created_at' => $po->created_at?->toDateTimeString(),
+                'updated_at' => $po->updated_at?->toDateTimeString(),
+            ])
+        );
     }
 
-    // Menambahkan PO baru atau update jika po_kode sudah ada
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'po_kode' => 'required|string|unique:tb_purchase_order,po_kode',
-            'pr_id' => 'required|exists:tb_purchase_request,pr_id',
-            'po_tanggal' => 'required|date',
-            'po_estimasi' => 'nullable|date',
-            'po_keterangan' => 'nullable|string',
-            'po_status' => 'nullable|string|in:open,approved,closed',
+        $request->validate([
+            'po_kode'        => 'required|unique:tb_purchase_order,po_kode',
+            'pr_id'          => 'required|exists:tb_purchase_request,pr_id',
+            'po_tanggal'     => 'required|date',
+            'po_estimasi'    => 'nullable|date',
+            'po_keterangan'  => 'nullable|string',
+            'details'        => 'required|array',
         ]);
 
-        $po = PurchaseOrderModel::where('po_kode', $data['po_kode'])->first();
+        DB::transaction(function () use ($request) {
 
-        if ($po) {
-            $po->update($data);
+            $po = PurchaseOrderModel::create([
+                'po_kode'       => $request->po_kode,
+                'pr_id'         => $request->pr_id,
+                'po_tanggal'    => $request->po_tanggal,
+                'po_estimasi'   => $request->po_estimasi,
+                'po_status'     => $request->po_status,
+                'po_keterangan' => $request->po_keterangan,
+                'po_pic'        => $request->po_pic,
+            ]);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Purchase Order berhasil diperbarui',
-                'data' => $po
-            ], 200);
-        }
-
-        $po = PurchaseOrderModel::create($data);
+            foreach ($request->details as $item) {
+                PurchaseOrderDetailModel::create([
+                    'po_id'                 => $po->po_id,
+                    'part_id'               => $item['part_id'],
+                    'dtl_po_part_number'    => $item['dtl_po_part_number'],
+                    'dtl_po_part_name'      => $item['dtl_po_part_name'],
+                    'dtl_po_satuan'         => $item['dtl_po_satuan'],
+                    'dtl_po_qty'            => $item['dtl_po_qty'],
+                    'dtl_qty_received'   => 0,
+                ]);
+            }
+        });
 
         return response()->json([
-            'status' => true,
-            'message' => 'Purchase Order berhasil ditambahkan',
-            'data' => $po
+            'message' => 'Purchase Order created'
         ], 201);
     }
 
-    // Menampilkan detail PO
-    public function show($id)
+    public function showKode($kode)
     {
-        $po = PurchaseOrderModel::with('purchaseRequest.pic')->findOrFail($id);
+        $po = PurchaseOrderModel::with([
+            'purchaseRequest',
+            'details',
+        ])
+        ->where('po_kode', $kode)
+        ->firstOrFail();
+
         return response()->json($po);
     }
 
-    // Update PO
+    public function show($id)
+    {
+        $po = PurchaseOrderModel::with(['purchaseRequest', 'details'])
+            ->findOrFail($id);
+
+        return response()->json([
+            'id' => $po->po_id,
+            'kode' => $po->po_kode,
+            'kode_pr' => $po->purchaseRequest->pr_kode ?? null,
+            'tanggal' => $po->po_tanggal,
+            'tanggal_estimasi' => $po->po_estimasi,
+            'status' => strtolower($po->po_status),
+            'pic' => $po->po_pic,
+            'keterangan' => $po->po_keterangan,
+            'created_at' => $po->created_at?->toDateTimeString(),
+            'updated_at' => $po->updated_at?->toDateTimeString(),
+            'details' => $po->details->map(fn ($d) => [
+                'po_detail_id' => $d->dtl_po_id,
+                'part_id' => $d->part_id,
+                'part_number' => $d->dtl_po_part_number,
+                'part_name' => $d->dtl_po_part_name,
+                'satuan' => $d->dtl_po_satuan,
+                'qty_order' => $d->dtl_po_qty,
+                'qty_received' => $d->dtl_qty_received,
+            ]),
+        ]);
+    }
+
     public function update(Request $request, $id)
     {
         $po = PurchaseOrderModel::findOrFail($id);
 
         $data = $request->validate([
-            'po_kode' => 'sometimes|required|string|unique:tb_purchase_order,po_kode,' . $po->po_id . ',po_id',
-            'pr_id' => 'sometimes|required|exists:tb_purchase_request,pr_id',
+            'po_kode' => 'sometimes|required|unique:tb_purchase_order,po_kode,' . $po->po_id . ',po_id',
             'po_tanggal' => 'sometimes|required|date',
             'po_estimasi' => 'nullable|date',
+            'po_status' => 'nullable|string',
             'po_keterangan' => 'nullable|string',
-            'po_status' => 'nullable|string|in:open,approved,closed',
         ]);
 
         $po->update($data);
@@ -77,11 +131,14 @@ class PurchaseOrderController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Purchase Order berhasil diperbarui',
-            'data' => $po
-        ], 200);
+            'data' => [
+                'id' => $po->po_id,
+                'kode' => $po->po_kode,
+                'status' => strtolower($po->po_status),
+            ]
+        ]);
     }
 
-    // Hapus PO
     public function destroy($id)
     {
         $po = PurchaseOrderModel::findOrFail($id);
@@ -90,6 +147,6 @@ class PurchaseOrderController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Purchase Order berhasil dihapus'
-        ], 200);
+        ]);
     }
 }
